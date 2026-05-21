@@ -1,9 +1,10 @@
 import { PostCard } from "@/components/post-card";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts, getPreferredLang } from "@/lib/posts";
 import { site } from "@/lib/site";
 
-export default function HomePage() {
-  const posts = getAllPosts();
+export default async function HomePage() {
+  const lang = await getPreferredLang();
+  const posts = getAllPosts(lang);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
@@ -12,7 +13,7 @@ export default function HomePage() {
           {site.name}
         </h1>
         <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-          {site.description}
+          {site.description[lang]}
         </p>
       </section>
 

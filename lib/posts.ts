@@ -1,14 +1,22 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { cookies } from "next/headers";
 
 export type Lang = "pt" | "en" | "de";
 
 export const LANGS: Lang[] = ["pt", "en", "de"];
 export const DEFAULT_LANG: Lang = "pt";
+export const LANG_COOKIE = "preferred-lang";
 
 export function isLang(value: unknown): value is Lang {
   return value === "pt" || value === "en" || value === "de";
+}
+
+export async function getPreferredLang(): Promise<Lang> {
+  const store = await cookies();
+  const value = store.get(LANG_COOKIE)?.value;
+  return isLang(value) ? value : DEFAULT_LANG;
 }
 
 export type PostFrontmatter = {
@@ -72,7 +80,7 @@ function translatedFilename(slug: string, lang: Lang): string | null {
   return null;
 }
 
-export function getAllPosts(): Post[] {
+export function getAllPosts(lang: Lang = DEFAULT_LANG): Post[] {
   if (!fs.existsSync(POSTS_DIR)) return [];
 
   const files = fs.readdirSync(POSTS_DIR).filter((f) => /\.mdx?$/.test(f));
@@ -85,7 +93,11 @@ export function getAllPosts(): Post[] {
   });
 
   const posts = canonical
-    .map((f) => readPostFile(f, f.replace(/\.mdx?$/, "")))
+    .map((f) => {
+      const slug = f.replace(/\.mdx?$/, "");
+      const translated = translatedFilename(slug, lang);
+      return readPostFile(translated ?? f, slug);
+    })
     .filter((p): p is Post => p !== null)
     .filter(
       (p) => process.env.NODE_ENV === "development" || !p.frontmatter.draft,

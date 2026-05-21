@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type Lang = "pt" | "en" | "de";
 
@@ -17,58 +17,14 @@ const LANGS: LangMeta[] = [
   { code: "de", iso: "de", fullName: "Deutsch" },
 ];
 
-const STORAGE_KEY = "preferred-lang";
-const DEFAULT_LANG: Lang = "pt";
+const COOKIE_NAME = "preferred-lang";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
-function readStoredLang(): Lang | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw === "pt" || raw === "en" || raw === "de") return raw;
-  return null;
-}
-
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ initialLang }: { initialLang: Lang }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlLang = searchParams.get("lang");
-  const currentFromUrl: Lang =
-    urlLang === "en" || urlLang === "de" || urlLang === "pt"
-      ? urlLang
-      : DEFAULT_LANG;
-
-  const [active, setActive] = useState<Lang>(currentFromUrl);
-  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState<Lang>(initialLang);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // On first mount, reconcile the URL with the stored preference. If the user
-  // arrived without an explicit ?lang= but had previously chosen one, apply it.
-  useEffect(() => {
-    setMounted(true);
-    const stored = readStoredLang();
-    if (!stored) {
-      setActive(currentFromUrl);
-      return;
-    }
-    setActive(stored);
-    if (stored !== currentFromUrl && !urlLang) {
-      const params = new URLSearchParams(searchParams.toString());
-      if (stored === DEFAULT_LANG) {
-        params.delete("lang");
-      } else {
-        params.set("lang", stored);
-      }
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Keep internal state aligned when the URL changes via back/forward, etc.
-  useEffect(() => {
-    if (mounted) setActive(currentFromUrl);
-  }, [currentFromUrl, mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,18 +50,8 @@ export function LanguageSwitcher() {
   function selectLang(lang: Lang) {
     setOpen(false);
     if (lang === active) return;
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, lang);
-    }
     setActive(lang);
-    const params = new URLSearchParams(searchParams.toString());
-    if (lang === DEFAULT_LANG) {
-      params.delete("lang");
-    } else {
-      params.set("lang", lang);
-    }
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    document.cookie = `${COOKIE_NAME}=${lang}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     router.refresh();
   }
 
@@ -130,7 +76,7 @@ export function LanguageSwitcher() {
         aria-expanded={open}
         aria-label={`Language: ${activeMeta.fullName}`}
         title={activeMeta.fullName}
-        className={flagButtonClasses(mounted)}
+        className={flagButtonClasses(true)}
       >
         <span
           aria-hidden="true"

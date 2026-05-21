@@ -14,23 +14,17 @@ import {
   formatDate,
   getAllPosts,
   getPostBySlug,
-  isLang,
+  getPreferredLang,
   type Lang,
 } from "@/lib/posts";
 import { site } from "@/lib/site";
 
 type Params = { slug: string };
-type SearchParams = { lang?: string | string[] };
 
 const FALLBACK_NOTICE: Record<Exclude<Lang, "pt">, string> = {
   en: "This post is not yet available in English. Showing the original version.",
   de: "Dieser Beitrag ist noch nicht auf Deutsch verfügbar. Die Originalversion wird angezeigt.",
 };
-
-function resolveLang(value: string | string[] | undefined): Lang {
-  const v = Array.isArray(value) ? value[0] : value;
-  return isLang(v) ? v : DEFAULT_LANG;
-}
 
 export function generateStaticParams(): Params[] {
   return getAllPosts().map((p) => ({ slug: p.slug }));
@@ -38,14 +32,12 @@ export function generateStaticParams(): Params[] {
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<Params>;
-  searchParams: Promise<SearchParams>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const { lang } = await searchParams;
-  const post = getPostBySlug(slug, resolveLang(lang));
+  const lang = await getPreferredLang();
+  const post = getPostBySlug(slug, lang);
   if (!post) return {};
 
   const url = `${site.url}/posts/${slug}`;
@@ -76,14 +68,11 @@ const prettyCodeOptions = {
 
 export default async function PostPage({
   params,
-  searchParams,
 }: {
   params: Promise<Params>;
-  searchParams: Promise<SearchParams>;
 }) {
   const { slug } = await params;
-  const { lang } = await searchParams;
-  const requestedLang = resolveLang(lang);
+  const requestedLang = await getPreferredLang();
   const post = getPostBySlug(slug, requestedLang);
   if (!post) notFound();
   const fallbackMessage =

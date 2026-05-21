@@ -1,8 +1,11 @@
 export const site = {
   name: "Jonathan Romano",
   title: "Jonathan Romano — Blog",
-  description:
-    "Notes on software, technology, and learning German. Built with Next.js and MDX.",
+  description: {
+    en: "AI does the work. I just take the credit.",
+    pt: "A IA faz o trabalho. Eu só fico com os créditos.",
+    de: "Die KI macht die Arbeit, ich kassiere nur den Ruhm.",
+  },
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   author: "Jonathan Romano",
   email: "jjonathanromano@gmail.com",
