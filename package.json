@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@giscus/react": "^3.1.0",
+    "@mdx-js/mdx": "^3.1.1",
     "@vercel/analytics": "^1.4.1",
     "flag-icons": "^7.5.0",
     "gray-matter": "^4.0.3",
